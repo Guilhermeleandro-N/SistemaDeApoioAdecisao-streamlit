@@ -1,4 +1,3 @@
-
 import streamlit as st
 import numpy as np
 
@@ -19,7 +18,7 @@ PREPROCESSING_PATH = "models/preprocessing.pkl"
 # ============================================================
 
 st.set_page_config(
-    page_title="Adult Income - MLP",
+    page_title="Predição de Renda - MLP",
     page_icon="🧠",
     layout="wide"
 )
@@ -61,14 +60,14 @@ st.title("🧠 Predição de Renda — Adult Income")
 
 st.markdown(
     """
-    ### Rede Neural MLP
+    ### Rede Neural Perceptron Multicamadas (MLP)
 
-    Esta aplicação utiliza uma **Rede Neural Multilayer Perceptron (MLP)**
-    previamente treinada com o dataset **Adult Income**.
+    Esta aplicação utiliza uma **Rede Neural Perceptron Multicamadas (MLP)**
+    previamente treinada com o conjunto de dados **Adult Income**.
 
     O modelo não é treinado durante a utilização da aplicação.
     Os dados informados abaixo são apenas pré-processados e enviados
-    para a rede neural para realizar a predição.
+    para a rede neural para realizar a previsão.
     """
 )
 
@@ -107,7 +106,7 @@ with col3:
 with col4:
 
     st.metric(
-        "Accuracy",
+        "Acurácia",
         "84,54%"
     )
 
@@ -148,11 +147,11 @@ with st.form("prediction_form"):
     with col2:
 
         fnlwgt = st.number_input(
-            "FNLWGT",
+            "Peso amostral (FNLWGT)",
             min_value=0,
             value=180000,
             step=1000,
-            help="Peso final de amostragem utilizado pelo dataset."
+            help="Peso final de amostragem utilizado pelo conjunto de dados."
         )
 
     with col3:
@@ -206,153 +205,177 @@ with st.form("prediction_form"):
 
     with col1:
 
+        classe_trabalho_pt = {
+            "Private": "Setor privado",
+            "Self-emp-not-inc": "Autônomo não incorporado",
+            "Self-emp-inc": "Autônomo incorporado",
+            "Federal-gov": "Governo federal",
+            "Local-gov": "Governo local",
+            "State-gov": "Governo estadual",
+            "Without-pay": "Sem remuneração",
+            "Never-worked": "Nunca trabalhou"
+        }
+
         workclass = st.selectbox(
             "Classe de trabalho",
-            [
-                "Private",
-                "Self-emp-not-inc",
-                "Self-emp-inc",
-                "Federal-gov",
-                "Local-gov",
-                "State-gov",
-                "Without-pay",
-                "Never-worked"
-            ]
+            list(classe_trabalho_pt.keys()),
+            format_func=lambda valor: classe_trabalho_pt[valor]
         )
+
+        escolaridade_pt = {
+            "Bachelors": "Bacharelado",
+            "Some-college": "Ensino superior incompleto",
+            "11th": "11º ano",
+            "HS-grad": "Ensino médio completo",
+            "Masters": "Mestrado",
+            "9th": "9º ano",
+            "Assoc-acdm": "Curso superior acadêmico",
+            "Assoc-voc": "Curso técnico/profissionalizante",
+            "7th-8th": "7º ao 8º ano",
+            "Doctorate": "Doutorado",
+            "Prof-school": "Formação profissional",
+            "5th-6th": "5º ao 6º ano",
+            "10th": "10º ano",
+            "1st-4th": "1º ao 4º ano",
+            "Preschool": "Pré-escola",
+            "12th": "12º ano"
+        }
 
         education = st.selectbox(
             "Escolaridade",
-            [
-                "Bachelors",
-                "Some-college",
-                "11th",
-                "HS-grad",
-                "Masters",
-                "9th",
-                "Assoc-acdm",
-                "Assoc-voc",
-                "7th-8th",
-                "Doctorate",
-                "Prof-school",
-                "5th-6th",
-                "10th",
-                "1st-4th",
-                "Preschool",
-                "12th"
-            ]
+            list(escolaridade_pt.keys()),
+            format_func=lambda valor: escolaridade_pt[valor]
         )
+
+        estado_civil_pt = {
+            "Married-civ-spouse": "Casado(a) com cônjuge civil",
+            "Divorced": "Divorciado(a)",
+            "Never-married": "Nunca casou",
+            "Separated": "Separado(a)",
+            "Widowed": "Viúvo(a)",
+            "Married-spouse-absent": "Casado(a) com cônjuge ausente",
+            "Married-AF-spouse": "Casado(a) com integrante das Forças Armadas"
+        }
 
         marital_status = st.selectbox(
             "Estado civil",
-            [
-                "Married-civ-spouse",
-                "Divorced",
-                "Never-married",
-                "Separated",
-                "Widowed",
-                "Married-spouse-absent",
-                "Married-AF-spouse"
-            ]
+            list(estado_civil_pt.keys()),
+            format_func=lambda valor: estado_civil_pt[valor]
         )
+
+        ocupacao_pt = {
+            "Tech-support": "Suporte técnico",
+            "Craft-repair": "Manutenção e reparos",
+            "Other-service": "Outros serviços",
+            "Sales": "Vendas",
+            "Exec-managerial": "Executivo/Gerencial",
+            "Prof-specialty": "Profissional especializado",
+            "Handlers-cleaners": "Serviços gerais e limpeza",
+            "Machine-op-inspct": "Operador de máquinas e inspeção",
+            "Adm-clerical": "Administrativo",
+            "Farming-fishing": "Agricultura e pesca",
+            "Transport-moving": "Transporte",
+            "Priv-house-serv": "Serviços domésticos",
+            "Protective-serv": "Serviços de proteção",
+            "Armed-Forces": "Forças Armadas"
+        }
 
         occupation = st.selectbox(
             "Ocupação",
-            [
-                "Tech-support",
-                "Craft-repair",
-                "Other-service",
-                "Sales",
-                "Exec-managerial",
-                "Prof-specialty",
-                "Handlers-cleaners",
-                "Machine-op-inspct",
-                "Adm-clerical",
-                "Farming-fishing",
-                "Transport-moving",
-                "Priv-house-serv",
-                "Protective-serv",
-                "Armed-Forces"
-            ]
+            list(ocupacao_pt.keys()),
+            format_func=lambda valor: ocupacao_pt[valor]
         )
 
     with col2:
 
+        relacionamento_pt = {
+            "Wife": "Esposa",
+            "Own-child": "Filho(a)",
+            "Husband": "Marido",
+            "Not-in-family": "Não pertence à família",
+            "Other-relative": "Outro parente",
+            "Unmarried": "Não casado(a)"
+        }
+
         relationship = st.selectbox(
             "Relacionamento familiar",
-            [
-                "Wife",
-                "Own-child",
-                "Husband",
-                "Not-in-family",
-                "Other-relative",
-                "Unmarried"
-            ]
+            list(relacionamento_pt.keys()),
+            format_func=lambda valor: relacionamento_pt[valor]
         )
 
+        etnia_pt = {
+            "White": "Branca",
+            "Black": "Negra",
+            "Asian-Pac-Islander": "Asiática ou das Ilhas do Pacífico",
+            "Amer-Indian-Eskimo": "Indígena americana ou nativa do Alasca",
+            "Other": "Outra"
+        }
+
         race = st.selectbox(
-            "Raça",
-            [
-                "White",
-                "Black",
-                "Asian-Pac-Islander",
-                "Amer-Indian-Eskimo",
-                "Other"
-            ]
+            "Etnia",
+            list(etnia_pt.keys()),
+            format_func=lambda valor: etnia_pt[valor]
         )
+
+        genero_pt = {
+            "Male": "Masculino",
+            "Female": "Feminino"
+        }
 
         gender = st.selectbox(
             "Gênero",
-            [
-                "Male",
-                "Female"
-            ]
+            list(genero_pt.keys()),
+            format_func=lambda valor: genero_pt[valor]
         )
+
+        pais_pt = {
+            "United-States": "Estados Unidos",
+            "Cambodia": "Camboja",
+            "England": "Inglaterra",
+            "Puerto-Rico": "Porto Rico",
+            "Canada": "Canadá",
+            "Germany": "Alemanha",
+            "Outlying-US(Guam-USVI-etc)": "Territórios dos EUA (Guam, Ilhas Virgens etc.)",
+            "India": "Índia",
+            "Japan": "Japão",
+            "Greece": "Grécia",
+            "South": "Coreia do Sul",
+            "China": "China",
+            "Cuba": "Cuba",
+            "Iran": "Irã",
+            "Honduras": "Honduras",
+            "Philippines": "Filipinas",
+            "Italy": "Itália",
+            "Poland": "Polônia",
+            "Jamaica": "Jamaica",
+            "Vietnam": "Vietnã",
+            "Mexico": "México",
+            "Portugal": "Portugal",
+            "Ireland": "Irlanda",
+            "France": "França",
+            "Dominican-Republic": "República Dominicana",
+            "Laos": "Laos",
+            "Ecuador": "Equador",
+            "Taiwan": "Taiwan",
+            "Haiti": "Haiti",
+            "Columbia": "Colômbia",
+            "Hungary": "Hungria",
+            "Guatemala": "Guatemala",
+            "Nicaragua": "Nicarágua",
+            "Scotland": "Escócia",
+            "Thailand": "Tailândia",
+            "Yugoslavia": "Iugoslávia",
+            "El-Salvador": "El Salvador",
+            "Trinadad&Tobago": "Trinidad e Tobago",
+            "Peru": "Peru",
+            "Hong": "Hong Kong",
+            "Holand-Netherlands": "Países Baixos"
+        }
 
         native_country = st.selectbox(
             "País de origem",
-            [
-                "United-States",
-                "Cambodia",
-                "England",
-                "Puerto-Rico",
-                "Canada",
-                "Germany",
-                "Outlying-US(Guam-USVI-etc)",
-                "India",
-                "Japan",
-                "Greece",
-                "South",
-                "China",
-                "Cuba",
-                "Iran",
-                "Honduras",
-                "Philippines",
-                "Italy",
-                "Poland",
-                "Jamaica",
-                "Vietnam",
-                "Mexico",
-                "Portugal",
-                "Ireland",
-                "France",
-                "Dominican-Republic",
-                "Laos",
-                "Ecuador",
-                "Taiwan",
-                "Haiti",
-                "Columbia",
-                "Hungary",
-                "Guatemala",
-                "Nicaragua",
-                "Scotland",
-                "Thailand",
-                "Yugoslavia",
-                "El-Salvador",
-                "Trinadad&Tobago",
-                "Peru",
-                "Hong",
-                "Holand-Netherlands"
-            ]
+            list(pais_pt.keys()),
+            format_func=lambda valor: pais_pt[valor]
         )
 
 
@@ -456,7 +479,7 @@ if submitted:
         with col1:
 
             st.metric(
-                "Probabilidade de renda > 50K",
+                "Probabilidade de renda anual acima de US$ 50 mil",
                 f"{probability * 100:.2f}%"
             )
 
@@ -467,14 +490,14 @@ if submitted:
 
                 st.metric(
                     "Classe prevista",
-                    "> 50K"
+                    "Acima de US$ 50 mil"
                 )
 
             else:
 
                 st.metric(
                     "Classe prevista",
-                    "<= 50K"
+                    "Até US$ 50 mil"
                 )
 
 
@@ -499,8 +522,8 @@ if submitted:
 
             st.success(
                 f"""
-                A rede neural classificou esta pessoa como
-                **renda superior a 50K**, com probabilidade
+                A rede neural classificou esta pessoa como tendo
+                **renda anual superior a US$ 50 mil**, com probabilidade
                 estimada de **{probability * 100:.2f}%**.
                 """
             )
@@ -509,9 +532,10 @@ if submitted:
 
             st.info(
                 f"""
-                A rede neural classificou esta pessoa como
-                **renda igual ou inferior a 50K**, com probabilidade
-                estimada de **{probability * 100:.2f}%** para a classe >50K.
+                A rede neural classificou esta pessoa como tendo
+                **renda anual igual ou inferior a US$ 50 mil**.
+                A probabilidade estimada para uma renda acima de
+                US$ 50 mil é de **{probability * 100:.2f}%**.
                 """
             )
 
@@ -526,9 +550,9 @@ if submitted:
 
         chart_data = {
 
-            "<= 50K": 1 - probability,
+            "Até US$ 50 mil": 1 - probability,
 
-            "> 50K": probability
+            "Acima de US$ 50 mil": probability
         }
 
         st.bar_chart(
@@ -545,11 +569,11 @@ if submitted:
         ):
 
             st.write(
-                "Entrada após pré-processamento:"
+                "Entrada após o pré-processamento:"
             )
 
             st.write(
-                f"{X.shape[1]} features"
+                f"{X.shape[1]} atributos"
             )
 
             st.write(
@@ -581,7 +605,6 @@ if submitted:
 st.divider()
 
 st.caption(
-    "Modelo MLP treinado previamente com o dataset Adult Income. "
-    "A aplicação realiza apenas inferência."
+    "Modelo MLP previamente treinado com o conjunto de dados Adult Income. "
+    "A aplicação realiza apenas previsões utilizando o modelo treinado."
 )
-
