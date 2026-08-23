@@ -1,9 +1,15 @@
 import streamlit as st
 import numpy as np
+import shap
+import matplotlib.pyplot as plt
 
 from mlp.checkpoint import ModelCheckpoint
-from datasets.adult import preprocess_new_data
 
+from mlp.explainability import generate_shap_summary
+from datasets.adult import (
+    preprocess_new_data,
+    load_and_prepare_data
+)
 
 # ============================================================
 # CONFIGURAÇÃO
@@ -51,6 +57,19 @@ def load_preprocessing():
 model = load_model()
 preprocessing = load_preprocessing()
 
+
+@st.cache_data
+def load_explanation_data():
+
+    (
+        X_train,
+        X_test,
+        y_train,
+        y_test,
+        _
+    ) = load_and_prepare_data()
+
+    return X_train, X_test
 
 # ============================================================
 # TÍTULO
@@ -109,6 +128,128 @@ with col4:
         "Acurácia",
         "84,54%"
     )
+
+# ============================================================
+# GUIA DOS CAMPOS
+# ============================================================
+
+st.divider()
+
+st.subheader("📖 Guia dos campos")
+
+st.write(
+    """
+    Consulte a tabela abaixo para entender o significado de cada
+    campo e das opções utilizadas pelo dataset Adult Income.
+    """
+)
+
+field_guide = [
+
+    {
+        "Campo": "age",
+        "Significado": "Idade da pessoa.",
+        "Como responder": "Informe a idade em anos. Ex.: 30 = pessoa com 30 anos.",
+        "Exemplo": "30"
+    },
+
+    {
+        "Campo": "workclass",
+        "Significado": "Tipo de vínculo ou classe de trabalho.",
+        "Como responder": "Private = empresa privada; Self-emp-not-inc = autônomo sem empresa constituída; Self-emp-inc = autônomo com empresa; Federal-gov = governo federal; Local-gov = governo local; State-gov = governo estadual; Without-pay = trabalho não remunerado; Never-worked = nunca trabalhou.",
+        "Exemplo": "Private"
+    },
+
+    {
+        "Campo": "fnlwgt",
+        "Significado": "Peso final de amostragem utilizado pelo dataset.",
+        "Como responder": "É um valor numérico utilizado para representar quantas pessoas da população possuem características semelhantes ao registro. Ex.: 180000 = peso de amostragem 180.000.",
+        "Exemplo": "180000"
+    },
+
+    {
+        "Campo": "education",
+        "Significado": "Nível de escolaridade da pessoa.",
+        "Como responder": "Preschool = pré-escola; 1st-4th = 1º ao 4º ano; 5th-6th = 5º ao 6º ano; 7th-8th = 7º ao 8º ano; 9th = 9º ano; 10th = 10º ano; 11th = 11º ano; 12th = 12º ano; HS-grad = ensino médio completo; Some-college = cursou faculdade, mas não concluiu; Assoc-voc = curso técnico; Assoc-acdm = curso superior de 2 anos; Bachelors = bacharelado; Masters = mestrado; Prof-school = escola profissionalizante; Doctorate = doutorado.",
+        "Exemplo": "Bachelors"
+    },
+
+    {
+        "Campo": "educational-num",
+        "Significado": "Representação numérica do nível de escolaridade.",
+        "Como responder": "1 = Preschool; 2 = 1st-4th; 3 = 5th-6th; 4 = 7th-8th; 5 = 9th; 6 = 10th; 7 = 11th; 8 = 12th; 9 = HS-grad; 10 = Some-college; 11 = Assoc-voc; 12 = Assoc-acdm; 13 = Bachelors; 14 = Masters; 15 = Prof-school; 16 = Doctorate.",
+        "Exemplo": "13 = Bachelors"
+    },
+
+    {
+        "Campo": "marital-status",
+        "Significado": "Estado civil da pessoa.",
+        "Como responder": "Married-civ-spouse = casado(a); Divorced = divorciado(a); Never-married = nunca casado(a); Separated = separado(a); Widowed = viúvo(a); Married-spouse-absent = casado(a), mas cônjuge ausente; Married-AF-spouse = casado(a) com cônjuge das Forças Armadas.",
+        "Exemplo": "Never-married"
+    },
+
+    {
+        "Campo": "occupation",
+        "Significado": "Tipo de ocupação profissional.",
+        "Como responder": "Selecione a ocupação correspondente à profissão ou atividade principal da pessoa.",
+        "Exemplo": "Exec-managerial"
+    },
+
+    {
+        "Campo": "relationship",
+        "Significado": "Relação da pessoa dentro do núcleo familiar.",
+        "Como responder": "Wife = esposa; Own-child = filho(a); Husband = marido; Not-in-family = não pertence ao núcleo familiar; Other-relative = outro parente; Unmarried = solteiro(a).",
+        "Exemplo": "Husband"
+    },
+
+    {
+        "Campo": "race",
+        "Significado": "Categoria racial registrada no dataset.",
+        "Como responder": "White = branca; Black = preta; Asian-Pac-Islander = asiática ou das ilhas do Pacífico; Amer-Indian-Eskimo = indígena ou esquimó; Other = outra categoria.",
+        "Exemplo": "White"
+    },
+
+    {
+        "Campo": "gender",
+        "Significado": "Gênero registrado para a pessoa.",
+        "Como responder": "Male = masculino; Female = feminino.",
+        "Exemplo": "Male"
+    },
+
+    {
+        "Campo": "capital-gain",
+        "Significado": "Valor de ganho de capital.",
+        "Como responder": "Informe o valor do ganho de capital. 0 = não possui ganho de capital registrado.",
+        "Exemplo": "0"
+    },
+
+    {
+        "Campo": "capital-loss",
+        "Significado": "Valor de perda de capital.",
+        "Como responder": "Informe o valor da perda de capital. 0 = não possui perda de capital registrada.",
+        "Exemplo": "0"
+    },
+
+    {
+        "Campo": "hours-per-week",
+        "Significado": "Quantidade de horas trabalhadas por semana.",
+        "Como responder": "Informe a quantidade de horas trabalhadas por semana. Ex.: 40 = trabalha 40 horas por semana.",
+        "Exemplo": "40"
+    },
+
+    {
+        "Campo": "native-country",
+        "Significado": "País de origem ou nascimento.",
+        "Como responder": "Selecione o país correspondente à origem ou nascimento da pessoa.",
+        "Exemplo": "United-States"
+    }
+]
+
+st.dataframe(
+    field_guide,
+    use_container_width=True,
+    hide_index=True
+)
 
 
 # ============================================================
@@ -559,7 +700,53 @@ if submitted:
             chart_data
         )
 
+        # ====================================================
+        # SHAP
+        # ====================================================
 
+        st.markdown(
+            "### 🔎 Explicabilidade do modelo"
+        )
+
+        st.write(
+            """
+            O gráfico abaixo apresenta a contribuição das
+            características utilizadas pela rede neural nas
+            previsões realizadas.
+            """
+        )
+
+        try:
+            X_train, X_test = load_explanation_data()
+
+            X_background = X_train[:50]
+
+            X_explain = X_test[:100]
+
+            feature_names = preprocessing[
+                "feature_columns"
+            ]
+
+            fig = generate_shap_summary(
+                model=model,
+                X_background=X_background,
+                X_explain=X_explain,
+                feature_names=feature_names
+            )
+
+            st.pyplot(
+                fig,
+                use_container_width=True
+            )
+
+        except Exception as error:
+
+            st.warning(
+                "Não foi possível gerar a análise SHAP."
+            )
+
+            st.exception(error)
+            
         # ====================================================
         # DETALHES TÉCNICOS
         # ====================================================
