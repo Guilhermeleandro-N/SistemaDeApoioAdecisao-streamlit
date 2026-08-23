@@ -44,7 +44,7 @@ def generate_shap_summary(
     )
 
     fig, ax = plt.subplots(
-        figsize=(7, 4)
+        figsize=(5, 2.8)
     )
 
     shap.summary_plot(

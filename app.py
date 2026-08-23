@@ -734,10 +734,10 @@ if submitted:
                 feature_names=feature_names
             )
 
-            st.pyplot(
-                fig,
-                use_container_width=True
-            )
+            col_esquerda, col_grafico, col_direita = st.columns([1, 2, 1])
+
+            with col_grafico:
+                st.pyplot(fig)
 
         except Exception as error:
 
