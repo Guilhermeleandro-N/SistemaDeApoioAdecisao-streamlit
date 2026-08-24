@@ -2,13 +2,15 @@ import streamlit as st
 import numpy as np
 import shap
 import matplotlib.pyplot as plt
+import plotly.express as px
 
 from mlp.checkpoint import ModelCheckpoint
 
 from mlp.explainability import generate_shap_summary
 from datasets.adult import (
     preprocess_new_data,
-    load_and_prepare_data
+    load_and_prepare_data,
+    load_raw_data
 )
 
 # ============================================================
@@ -699,54 +701,6 @@ if submitted:
         st.bar_chart(
             chart_data
         )
-
-        # ====================================================
-        # SHAP
-        # ====================================================
-
-        st.markdown(
-            "### 🔎 Explicabilidade do modelo"
-        )
-
-        st.write(
-            """
-            O gráfico abaixo apresenta a contribuição das
-            características utilizadas pela rede neural nas
-            previsões realizadas.
-            """
-        )
-
-        try:
-            X_train, X_test = load_explanation_data()
-
-            X_background = X_train[:50]
-
-            X_explain = X_test[:100]
-
-            feature_names = preprocessing[
-                "feature_columns"
-            ]
-
-            fig = generate_shap_summary(
-                model=model,
-                X_background=X_background,
-                X_explain=X_explain,
-                feature_names=feature_names
-            )
-
-            col_esquerda, col_grafico, col_direita = st.columns([1, 2, 1])
-
-            with col_grafico:
-                st.pyplot(fig)
-
-        except Exception as error:
-
-            st.warning(
-                "Não foi possível gerar a análise SHAP."
-            )
-
-            st.exception(error)
-            
         # ====================================================
         # DETALHES TÉCNICOS
         # ====================================================
@@ -784,6 +738,220 @@ if submitted:
 
         st.exception(error)
 
+# ============================================================
+# ANÁLISE DOS DADOS
+# ============================================================
+
+st.divider()
+
+st.subheader("📊 Análise dos dados")
+
+st.write(
+    """
+    Selecione uma característica para visualizar sua relação
+    com a faixa de renda no conjunto de dados Adult Income.
+    """
+)
+
+try:
+
+    # --------------------------------------------------------
+    # Carregar dataset
+    # --------------------------------------------------------
+
+    df_analysis = load_raw_data()
+
+    # --------------------------------------------------------
+    # Features disponíveis para análise
+    # --------------------------------------------------------
+
+    features_analysis = {
+        "Gênero": "gender",
+        "Idade": "age",
+        "Horas trabalhadas por semana": "hours-per-week",
+        "Escolaridade": "education",
+        "Ocupação": "occupation",
+        "Classe de trabalho": "workclass",
+        "Estado civil": "marital-status",
+        "Relacionamento familiar": "relationship",
+        "Raça": "race",
+        "País de origem": "native-country"
+    }
+
+    # --------------------------------------------------------
+    # Seleção da feature
+    # --------------------------------------------------------
+
+    feature_selected = st.selectbox(
+        "🔎 Escolha uma característica para analisar:",
+        list(features_analysis.keys())
+    )
+
+    feature_column = features_analysis[
+        feature_selected
+    ]
+
+    # --------------------------------------------------------
+    # Selecionar apenas as colunas necessárias
+    # --------------------------------------------------------
+
+    df_plot = df_analysis[
+        [
+            feature_column,
+            "income"
+        ]
+    ].copy()
+
+    # Remover valores ausentes
+    df_plot = df_plot.dropna()
+
+    # --------------------------------------------------------
+    # Traduzir renda
+    # --------------------------------------------------------
+
+    df_plot["income"] = (
+        df_plot["income"]
+        .astype(str)
+        .str.strip()
+    )
+
+    df_plot["Renda"] = df_plot["income"].map({
+        "<=50K": "Até US$ 50 mil",
+        ">50K": "Acima de US$ 50 mil"
+    })
+
+    # Remover valores que não foram reconhecidos
+    df_plot = df_plot.dropna(
+        subset=["Renda"]
+    )
+
+    # --------------------------------------------------------
+    # GRÁFICO
+    # --------------------------------------------------------
+
+    if feature_column in [
+        "age",
+        "hours-per-week"
+    ]:
+
+        fig = px.histogram(
+            df_plot,
+            x=feature_column,
+            color="Renda",
+            barmode="group",
+            labels={
+                "age": "Idade",
+                "hours-per-week": "Horas trabalhadas por semana",
+                "Renda": "Faixa de renda"
+            },
+            title=f"{feature_selected} × Faixa de renda",
+            hover_data={
+                feature_column: True,
+                "Renda": True
+            }
+        )
+
+    else:
+
+        # Limitar às 15 categorias mais frequentes
+        top_categories = (
+            df_plot[feature_column]
+            .value_counts()
+            .head(15)
+            .index
+        )
+
+        df_plot = df_plot[
+            df_plot[feature_column].isin(
+                top_categories
+            )
+        ]
+
+        fig = px.histogram(
+            df_plot,
+            x=feature_column,
+            color="Renda",
+            barmode="group",
+            labels={
+                feature_column: feature_selected,
+                "Renda": "Faixa de renda"
+            },
+            title=f"{feature_selected} × Faixa de renda"
+        )
+
+    # --------------------------------------------------------
+    # Configurações do gráfico
+    # --------------------------------------------------------
+
+    fig.update_layout(
+        height=500,
+        hovermode="x unified"
+    )
+
+    # --------------------------------------------------------
+    # Mostrar gráfico interativo
+    # --------------------------------------------------------
+
+    st.plotly_chart(
+        fig,
+        use_container_width=True
+    )
+
+except Exception as error:
+
+    st.warning(
+        "Não foi possível gerar o gráfico de análise."
+    )
+
+    st.exception(error)
+
+# ====================================================
+# SHAP
+# ====================================================
+
+st.markdown(
+    "### 🔎 Explicabilidade do modelo"
+)
+
+st.write(
+    """
+    O gráfico abaixo apresenta a contribuição das
+    características utilizadas pela rede neural nas
+    previsões realizadas.
+    """
+)
+
+try:
+    X_train, X_test = load_explanation_data()
+
+    X_background = X_train[:50]
+
+    X_explain = X_test[:100]
+
+    feature_names = preprocessing[
+        "feature_columns"
+    ]
+
+    fig = generate_shap_summary(
+        model=model,
+        X_background=X_background,
+        X_explain=X_explain,
+        feature_names=feature_names
+    )
+
+    col_esquerda, col_grafico, col_direita = st.columns([1, 2, 1])
+
+    with col_grafico:
+        st.pyplot(fig)
+
+except Exception as error:
+
+    st.warning(
+        "Não foi possível gerar a análise SHAP."
+    )
+
+    st.exception(error)
+            
 
 # ============================================================
 # RODAPÉ
