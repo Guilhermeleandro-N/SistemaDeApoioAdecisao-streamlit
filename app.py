@@ -73,6 +73,43 @@ def load_explanation_data():
 
     return X_train, X_test
 
+
+def calcular_taxa_renda_alta(df, coluna):
+
+    dados = df[
+        [
+            coluna,
+            "income"
+        ]
+    ].copy()
+
+    dados = dados.dropna()
+
+    dados["income"] = (
+        dados["income"]
+        .astype(str)
+        .str.strip()
+        .str.replace(".", "", regex=False)
+    )
+
+    dados["renda_alta"] = (
+        dados["income"] == ">50K"
+    )
+
+    resultado = (
+        dados
+        .groupby(coluna)["renda_alta"]
+        .agg(["mean", "count"])
+        .reset_index()
+    )
+
+    resultado["percentual"] = (
+        resultado["mean"] * 100
+    )
+
+    return resultado
+
+
 # ============================================================
 # TÍTULO
 # ============================================================
@@ -774,7 +811,7 @@ try:
         "Classe de trabalho": "workclass",
         "Estado civil": "marital-status",
         "Relacionamento familiar": "relationship",
-        "Raça": "race",
+        "Etnia": "race",
         "País de origem": "native-country"
     }
 
@@ -904,6 +941,220 @@ except Exception as error:
     )
 
     st.exception(error)
+
+
+# ============================================================
+# ANÁLISE DE DIFERENÇAS SOCIOECONÔMICAS
+# ============================================================
+
+st.divider()
+
+st.subheader("📊 Análise de diferenças socioeconômicas")
+
+st.write(
+    """
+    Esta análise apresenta a proporção de pessoas com renda
+    anual acima de US$ 50 mil dentro de diferentes grupos
+    presentes no conjunto de dados Adult Income.
+    """
+)
+
+try:
+
+    df_desigualdade = load_raw_data()
+
+    # --------------------------------------------------------
+    # GÊNERO
+    # --------------------------------------------------------
+
+    genero = calcular_taxa_renda_alta(
+        df_desigualdade,
+        "gender"
+    )
+
+    genero["gender"] = genero["gender"].replace({
+        "Male": "Masculino",
+        "Female": "Feminino"
+    })
+
+    genero = genero.sort_values(
+        "percentual",
+        ascending=False
+    )
+
+    fig_genero = px.bar(
+        genero,
+        x="gender",
+        y="percentual",
+        text="percentual",
+        labels={
+            "gender": "Gênero",
+            "percentual": "% com renda acima de US$ 50 mil"
+        },
+        title="Percentual de renda acima de US$ 50 mil por gênero"
+    )
+
+    fig_genero.update_traces(
+        texttemplate="%{y:.1f}%",
+        textposition="outside",
+        hovertemplate="<b>%{x}</b><br>% com renda acima de US$ 50 mil: %{y:.1f}%<extra></extra>"
+    )
+
+    fig_genero.update_layout(
+        xaxis_title="Gênero",
+        yaxis_title="% com renda acima de US$ 50 mil",
+        yaxis_range=[
+            0,
+            max(genero["percentual"].max() * 1.20, 10)
+        ],
+        height=500
+    )
+
+    st.plotly_chart(
+        fig_genero,
+        use_container_width=True
+    )
+
+    # --------------------------------------------------------
+    # ETNIA
+    # --------------------------------------------------------
+
+    etnia = calcular_taxa_renda_alta(
+        df_desigualdade,
+        "race"
+    )
+
+    etnia["race"] = etnia["race"].replace({
+        "White": "Branca",
+        "Black": "Negra",
+        "Asian-Pac-Islander": "Asiática ou das Ilhas do Pacífico",
+        "Amer-Indian-Eskimo": "Indígena americana ou nativa do Alasca",
+        "Other": "Outra"
+    })
+
+    etnia = etnia.sort_values(
+        "percentual",
+        ascending=True
+    )
+
+    fig_etnia = px.bar(
+        etnia,
+        x="percentual",
+        y="race",
+        orientation="h",
+        text="percentual",
+        labels={
+            "race": "Etnia",
+            "percentual": "% com renda acima de US$ 50 mil"
+        },
+        title="Percentual de renda acima de US$ 50 mil por etnia"
+    )
+
+    fig_etnia.update_traces(
+        texttemplate="%{x:.1f}%",
+        textposition="outside",
+        hovertemplate="<b>%{y}</b><br>% com renda acima de US$ 50 mil: %{x:.1f}%<extra></extra>"
+    )
+
+    fig_etnia.update_layout(
+        xaxis_title="% com renda acima de US$ 50 mil",
+        yaxis_title="Etnia",
+        xaxis_range=[
+            0,
+            max(etnia["percentual"].max() * 1.20, 10)
+        ],
+        height=500
+    )
+
+    st.plotly_chart(
+        fig_etnia,
+        use_container_width=True
+    )
+
+
+    # --------------------------------------------------------
+    # ESCOLARIDADE
+    # --------------------------------------------------------
+
+    escolaridade = calcular_taxa_renda_alta(
+        df_desigualdade,
+        "education"
+    )
+
+    escolaridade["education"] = escolaridade["education"].replace({
+        "Bachelors": "Bacharelado",
+        "Some-college": "Ensino superior incompleto",
+        "11th": "11º ano",
+        "HS-grad": "Ensino médio completo",
+        "Masters": "Mestrado",
+        "9th": "9º ano",
+        "Assoc-acdm": "Curso superior acadêmico",
+        "Assoc-voc": "Curso técnico/profissionalizante",
+        "7th-8th": "7º ao 8º ano",
+        "Doctorate": "Doutorado",
+        "Prof-school": "Formação profissional",
+        "5th-6th": "5º ao 6º ano",
+        "10th": "10º ano",
+        "1st-4th": "1º ao 4º ano",
+        "Preschool": "Pré-escola",
+        "12th": "12º ano"
+    })
+
+    escolaridade = escolaridade.sort_values(
+        "percentual",
+        ascending=True
+    )
+
+    fig_escolaridade = px.bar(
+        escolaridade,
+        x="percentual",
+        y="education",
+        orientation="h",
+        text="percentual",
+        labels={
+            "education": "Escolaridade",
+            "percentual": "% com renda acima de US$ 50 mil"
+        },
+        title="Percentual de renda acima de US$ 50 mil por escolaridade"
+    )
+
+    fig_escolaridade.update_traces(
+        texttemplate="%{x:.1f}%",
+        textposition="outside",
+        hovertemplate="<b>%{y}</b><br>% com renda acima de US$ 50 mil: %{x:.1f}%<extra></extra>"
+    )
+
+    fig_escolaridade.update_layout(
+        xaxis_title="% com renda acima de US$ 50 mil",
+        yaxis_title="Escolaridade",
+        xaxis_range=[
+            0,
+            max(escolaridade["percentual"].max() * 1.20, 10)
+        ],
+        height=700
+    )
+
+    st.plotly_chart(
+        fig_escolaridade,
+        use_container_width=True
+    )
+
+    st.caption(
+        """
+        Os gráficos apresentam associações observadas nos registros
+        do conjunto de dados. As diferenças entre os grupos não
+        estabelecem uma relação de causa e efeito.
+        """
+    )
+
+except Exception as error:
+
+    st.warning(
+        "Não foi possível gerar a análise por gênero, etnia e escolaridade."
+    )
+
+    st.exception(error)
+
 
 # ====================================================
 # SHAP
